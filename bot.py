@@ -41,6 +41,11 @@ if not TOKEN:
 
 updater = Updater(token=TOKEN)
 
+def escape(inp: str) -> str:
+    for a, b in {'&': '&amp;', '<': '&lt;', '>': '&gt;'}.items():
+        inp = inp.replace(a, b)
+    return inp
+
 def on_message(update: Update, context: CallbackContext):
     with YoutubeDL({'silent': True}) as ydl:
         url = update.message.text
@@ -49,13 +54,13 @@ def on_message(update: Update, context: CallbackContext):
         info_dict = ydl.sanitize_info(ydl.extract_info(url, download=False))
         if info_dict['extractor'] != "TikTok":
             return update.message.reply_text('Send an actual TikTok link.')
-        update.message.reply_video(video=info_dict['url'], parse_mode=ParseMode().HTML, caption=f"<pre>{info_dict['title']}</pre>\nby https://tiktok.com/@{info_dict['uploader']}\n<pre>{info_dict['uploader']}|{info_dict['id']}</pre>\nDownloaded with @{context.bot.username}")
+        update.message.reply_video(video=info_dict['url'], parse_mode=ParseMode().HTML, caption=f"<pre>{escape(info_dict['title'])}</pre>\nby https://tiktok.com/@{escape(info_dict['uploader'])}\n<pre>{escape(info_dict['uploader'])}|{escape(info_dict['id'])}</pre>\nDownloaded with @{escape(context.bot.username)}")
 
 def send_code(update: Update, context: CallbackContext):
     update.message.reply_document(open(inspect.getfile(lambda: None), 'rb'), filename='bot.py')
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text(f'Hey, im @{context.bot.username}\nYou can use me to download TikTok videos\nYou can get my code with /code')
+    update.message.reply_text(f'Hey, im @{escape(context.bot.username)}\nYou can use me to download TikTok videos\nYou can get my code with /code')
 
 updater.dispatcher.add_handler(CommandHandler('start', start, run_async=True))
 updater.dispatcher.add_handler(CommandHandler('code', send_code, run_async=True))
