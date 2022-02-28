@@ -42,18 +42,17 @@ if not TOKEN:
 updater = Updater(token=TOKEN)
 
 def on_message(update: Update, context: CallbackContext):
-    chat_id = update.effective_chat.id
     with YoutubeDL({'silent': True}) as ydl:
         url = update.message.text
         while any(filter in url for filter in ['vm.tiktok.com', 'm.tiktok.com']):
             url = requests.head(url).headers['Location']
         info_dict = ydl.sanitize_info(ydl.extract_info(url, download=False))
         if info_dict['extractor'] != "TikTok":
-            return context.bot.send_message(chat_id, 'Send an actual TikTok link.')
-        update.message.reply_video(chat_id=chat_id, video=info_dict['url'], parse_mode=ParseMode().HTML, caption=f"<pre>{info_dict['title']}</pre>\nby https://tiktok.com/@{info_dict['uploader']}\n<pre>{info_dict['uploader']}|{info_dict['id']}</pre>\nDownloaded with @{context.bot.username}")
+            return update.message.reply_text('Send an actual TikTok link.')
+        update.message.reply_video(video=info_dict['url'], parse_mode=ParseMode().HTML, caption=f"<pre>{info_dict['title']}</pre>\nby https://tiktok.com/@{info_dict['uploader']}\n<pre>{info_dict['uploader']}|{info_dict['id']}</pre>\nDownloaded with @{context.bot.username}")
 
 def send_code(update: Update, context: CallbackContext):
-    context.bot.send_document(update.effective_chat.id, open(inspect.getfile(lambda: None), 'rb'), filename='bot.py')
+    update.message.reply_document(open(inspect.getfile(lambda: None), 'rb'), filename='bot.py')
 
 def start(update: Update, context: CallbackContext):
     update.message.reply_text(f'Hey, im @{context.bot.username}\nYou can use me to download TikTok videos\nYou can get my code with /code')
