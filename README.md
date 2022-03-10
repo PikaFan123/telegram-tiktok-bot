@@ -2,6 +2,8 @@
 
 A simple telegram tiktok downloader bot
 
-Install requests, python-telegram-bot and yt-dlp with pip, then
+Needs ffmpeg in $PATH
+
+Install requests, python-telegram-bot, ffmpeg-python and yt-dlp with pip, then
 
 set the TELEGRAM environment variable to your telegram token and run bot.py 

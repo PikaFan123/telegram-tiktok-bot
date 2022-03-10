@@ -27,8 +27,9 @@
 
 import os
 import inspect
-import json
+import tempfile
 import requests
+import ffmpeg
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CallbackContext, MessageHandler, CommandHandler, Filters
 from yt_dlp import YoutubeDL
@@ -47,14 +48,19 @@ def escape(inp: str) -> str:
     return inp
 
 def on_message(update: Update, context: CallbackContext):
-    with YoutubeDL({'silent': True}) as ydl:
+    tmps = [tempfile.mkstemp(suffix=".mp4")[1] for i in range(2)]
+    with YoutubeDL({'silent': True, 'outtmpl': tmps[0], 'overwrites': True}) as ydl:
         url = update.message.text
         while any(filter in url for filter in ['vm.tiktok.com', 'm.tiktok.com']):
             url = requests.head(url).headers['Location']
         info_dict = ydl.sanitize_info(ydl.extract_info(url, download=False))
         if info_dict['extractor'] != "TikTok":
             return update.message.reply_text('Send an actual TikTok link.')
-        update.message.reply_video(video=info_dict['url'], parse_mode=ParseMode().HTML, caption=f"<pre>{escape(info_dict['title'])}</pre>\nby https://tiktok.com/@{escape(info_dict['uploader'])}\n<pre>{escape(info_dict['uploader'])}|{escape(info_dict['id'])}</pre>\nDownloaded with @{escape(context.bot.username)}")
+        ydl.extract_info(url)
+        ffmpeg.input(tmps[0]).output(tmps[1], vcodec="libx264", loglevel="fatal", y=None).run()
+        with open(tmps[1], mode='rb') as video:
+            update.message.reply_video(video=video, parse_mode=ParseMode().HTML, caption=f"<pre>{escape(info_dict['title'])}</pre>\nby https://tiktok.com/@{escape(info_dict['uploader'])}\n<pre>{escape(info_dict['uploader'])}|{escape(info_dict['id'])}</pre>\nDownloaded with @{escape(context.bot.username)}")
+        _ = [os.remove(tmp) for tmp in tmps]
 
 def send_code(update: Update, context: CallbackContext):
     update.message.reply_document(open(inspect.getfile(lambda: None), 'rb'), filename='bot.py')
